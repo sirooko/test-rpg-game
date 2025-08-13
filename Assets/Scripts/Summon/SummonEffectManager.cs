@@ -1,15 +1,13 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
-using TMPro;
 using UnityEngine.UI;
 
 public class SummonEffectManager : MonoBehaviour
 {
-    public GameObject summonEffectUI;              // ÀüÃ¼ ÆĞ³Î
-    public GameObject summonUI; // ±âÁ¸ ¹öÆ°µéÀ» °¨½Î´Â ºÎ¸ğ ¿ÀºêÁ§Æ®
-    public SummonManager summonManager; // ¿¬°á ÇÊ¿ä
-
-
+    [Header("Refs")]
+    public GameObject summonEffectUI;   // ì „ì²´ íŒ¨ë„
+    public GameObject summonUI;         // ê¸°ì¡´ ë²„íŠ¼ë“¤ì„ ê°ì‹¸ëŠ” ë¶€ëª¨ ì˜¤ë¸Œì íŠ¸
+    public SummonManager summonManager; // ì—°ê²° í•„ìš”
 
     public Image backgroundDim;
     public Image magicCircle;
@@ -18,58 +16,62 @@ public class SummonEffectManager : MonoBehaviour
     public Text resultText;
     public Button closeButton;
 
-
     void Start()
     {
-        closeButton.onClick.AddListener(CloseEffect);
-        summonEffectUI.SetActive(false);
+        if (closeButton != null) closeButton.onClick.AddListener(CloseEffect);
+        if (summonEffectUI != null) summonEffectUI.SetActive(false);
     }
 
     public void StartSummonEffect()
     {
-        summonUI.SetActive(false);
-
+        if (summonUI != null) summonUI.SetActive(false);
         StartCoroutine(PlaySummonEffect());
     }
 
     IEnumerator PlaySummonEffect()
     {
-        summonEffectUI.SetActive(true);
+        if (summonEffectUI != null) summonEffectUI.SetActive(true);
 
-        // ÃÊ±âÈ­
-        lightBurst.gameObject.SetActive(false);
-        characterImage.gameObject.SetActive(false);
-        resultText.gameObject.SetActive(false);
-        closeButton.gameObject.SetActive(false);
+        // ì´ˆê¸°í™”
+        if (lightBurst) lightBurst.gameObject.SetActive(false);
+        if (characterImage) characterImage.gameObject.SetActive(false);
+        if (resultText) resultText.gameObject.SetActive(false);
+        if (closeButton) closeButton.gameObject.SetActive(false);
 
         yield return new WaitForSeconds(1.5f);
 
-        // ºû ¹øÂ½
-        lightBurst.gameObject.SetActive(true);
+        // ë¹› ë²ˆì©
+        if (lightBurst) lightBurst.gameObject.SetActive(true);
 
         yield return new WaitForSeconds(0.5f);
 
-
+        // (ì—°ì¶œ ì—¬ë°±)
         yield return new WaitForSeconds(0.5f);
 
-        // Ä³¸¯ÅÍ µîÀå
-        ShowSummonResrult();
+        // âœ… ìºë¦­í„° ë“±ì¥: ë¹„ìš©ì€ ì´ë¯¸ ì»¨íŠ¸ë¡¤ëŸ¬ì—ì„œ ì°¨ê°ë˜ì—ˆìœ¼ë¯€ë¡œ 'NoCost' í˜¸ì¶œ
+        ShowSummonResult();
 
         yield return new WaitForSeconds(1f);
 
-        // ´İ±â ¹öÆ° µîÀå
-        closeButton.gameObject.SetActive(true);
+        // ë‹«ê¸° ë²„íŠ¼ ë“±ì¥
+        if (closeButton) closeButton.gameObject.SetActive(true);
+    }
+
+    void ShowSummonResult()
+    {
+        if (summonManager == null)
+        {
+            Debug.LogWarning("[SummonEffectManager] SummonManager not set.");
+            return;
+        }
+        // âœ… ë¹„ìš© ì—†ëŠ” ì†Œí™˜ì„ í˜¸ì¶œ (ë‚´ë¶€ì—ì„œ SpendCurrency ì ˆëŒ€ í˜¸ì¶œ X)
+        summonManager.SummonCharacterNoCost();
     }
 
     void CloseEffect()
     {
-        summonManager.CloseResultUI();
-        summonEffectUI.SetActive(false);
-        summonUI.SetActive(true);
-    }
-
-    void ShowSummonResrult()
-    {
-        summonManager.SummonCharacter();
+        if (summonManager != null) summonManager.CloseResultUI();
+        if (summonEffectUI != null) summonEffectUI.SetActive(false);
+        if (summonUI != null) summonUI.SetActive(true);
     }
 }

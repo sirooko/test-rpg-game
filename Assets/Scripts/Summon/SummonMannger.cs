@@ -1,6 +1,5 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 public class SummonManager : MonoBehaviour
 {
@@ -10,43 +9,48 @@ public class SummonManager : MonoBehaviour
     public Image resultImage;
     public Text resultName;
 
-    public int summonCost = 100; // ¸¶·Â¼® ¼Ò¸ğ·®
+    public int summonCost = 100; // (ë ˆê±°ì‹œ) ë‚´ë¶€ ë¹„ìš©. ì™¸ë¶€ì—ì„œ ë¹„ìš© ì²˜ë¦¬í•˜ë©´ ì‚¬ìš© ì•ˆ í•¨.
 
+    // âœ… ì™¸ë¶€ì—ì„œ ë¹„ìš©ì„ ì´ë¯¸ ì°¨ê°í•œ ê²½ìš° ì´ í•¨ìˆ˜ë¥¼ í˜¸ì¶œí•˜ì„¸ìš”.
+    public void SummonCharacterNoCost()
+    {
+        SummonCore();
+    }
 
+    // (ë ˆê±°ì‹œ) ë‚´ë¶€ì—ì„œ ë¹„ìš©ê¹Œì§€ ì²˜ë¦¬í•˜ëŠ” ë²„ì „ â€” ê¸°ì¡´ ì½”ë“œ ìœ ì§€
     public void SummonCharacter()
     {
-        // ¨ç ÀçÈ­ È®ÀÎ ¹× Â÷°¨
+        // â‘  ì¬í™” í™•ì¸ ë° ì°¨ê° (ë‚´ë¶€ ì²˜ë¦¬)
         if (!CurrencyManager.Instance.SpendCurrency(summonCost))
-            {
-                Debug.Log("¼ÒÈ¯ ½ÇÆĞ: ÀçÈ­ ºÎÁ·");
-                return;
-            }
+        {
+            Debug.Log("ì†Œí™˜ ì‹¤íŒ¨: ì¬í™” ë¶€ì¡±");
+            return;
+        }
+        SummonCore();
+    }
 
-        // ¨è Á¤»óÀûÀ¸·Î ¼ÒÈ¯ ÁøÇà
-
-        // ·£´ı ¼±ÅÃ
+    // ê³µí†µ ì†Œí™˜ ë³¸ì²´
+    private void SummonCore()
+    {
+        // ëœë¤ ì„ íƒ
         int rand = Random.Range(0, possibleCharacters.Length);
         CharacterData2 template = possibleCharacters[rand];
 
-        // »õ·Î¿î ÀÎ½ºÅÏ½º »ı¼º ¹× µ¥ÀÌÅÍ º¹»ç
+        // ìƒˆë¡œìš´ ì¸ìŠ¤í„´ìŠ¤ ìƒì„± ë° ë°ì´í„° ë³µì‚¬
         CharacterData2 newCharacter = ScriptableObject.CreateInstance<CharacterData2>();
         CopyCharacterData(template, newCharacter);
 
-        // ¸®½ºÆ®¿¡ Ãß°¡
+        // ë¦¬ìŠ¤íŠ¸ì— ì¶”ê°€
         CharacterInventoryManager.Instance.AddCharacter(newCharacter);
 
-        // °á°ú UI Ç¥½Ã
+        // ê²°ê³¼ UI í‘œì‹œ
         resultImage.sprite = newCharacter.characterSprite;
         resultName.text = newCharacter.characterName;
         summonResultUI.SetActive(true);
     }
 
-    public void CloseResultUI()
-    {
-        summonResultUI.SetActive(false);
-    }
+    public void CloseResultUI() => summonResultUI.SetActive(false);
 
-    // µ¥ÀÌÅÍ º¹»ç ÇÔ¼ö
     void CopyCharacterData(CharacterData2 from, CharacterData2 to)
     {
         to.characterName = from.characterName;
