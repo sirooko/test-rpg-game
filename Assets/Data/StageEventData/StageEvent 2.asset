@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a0d868f6220bf446bf5487a0650f07d, type: 3}
+  m_Name: StageEvent 2
+  m_EditorClassIdentifier: 
+  eventDescription: "\uB5A0\uB3CC\uC774 \uC0C1\uC778\uACFC \uB9C8\uC8FC\uCCE4\uB2E4"
+  option1Text: "\uAC70\uB798\uD55C\uB2E4"
+  option2Text: "\uB3C4\uB9DD\uCE5C\uB2E4"
+  option1IsFight: 0
+  option2IsFight: 0

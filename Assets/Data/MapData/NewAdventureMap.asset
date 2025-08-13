@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6df496dcd35760749a4eb5d1c4af99c0, type: 3}
+  m_Name: NewAdventureMap
+  m_EditorClassIdentifier: 
+  mapName: "\uD398\uD5C8\uAC00\uB41C\uB9C8\uC744"
+  description: 
+  thumbnail: {fileID: 891942287, guid: d71a3dc7aa20fad4f9a99fc76a9254ba, type: 3}
+  backgroundImage: {fileID: 2093186594, guid: 9ee30eb7d2f1f404790266ee96a67099, type: 3}
+  difficulty: 1
+  maxStage: 5
+  stages:
+  - {fileID: 11400000, guid: 3b2091b0b015dce4ab33ae4e479519d5, type: 2}
+  - {fileID: 11400000, guid: 3de826cf6bcdecd48b9dc3beabcfbe4d, type: 2}
+  - {fileID: 11400000, guid: 5e360f2f5896d0f4683344cba3b2847e, type: 2}
+  - {fileID: 11400000, guid: cc038d27d14bedd47ae1a4b0cf85f5d2, type: 2}
+  - {fileID: 11400000, guid: 449a042074eb9cd41bce76a8ebc6d9f3, type: 2}

@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d3b237544d023e47a48fe2f7189e9c1, type: 3}
+  m_Name: TestHeroData
+  m_EditorClassIdentifier: 
+  characterName: "\uD14C\uC2A4\uD2B8\uC601\uC6C5"
+  battleSprite: {fileID: 172626504, guid: c4d2ccab0c2ad7e47853b6e31a7ac7c2, type: 3}
+  characterSprite: {fileID: 172626504, guid: c4d2ccab0c2ad7e47853b6e31a7ac7c2, type: 3}
+  level: 1
+  maxHP: 50
+  maxMana: 50
+  attack: 7
+  defense: 7
+  magic: 7
+  resistance: 7
+  agility: 7
+  talent: 0
+  stress: 0
+  grade: 7
