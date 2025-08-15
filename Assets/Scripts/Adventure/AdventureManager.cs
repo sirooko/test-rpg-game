@@ -94,40 +94,70 @@ public class AdventureManager : MonoBehaviour
 
         if (isFight)
         {
-            // ✅ 변경: 임시 전투(FakeBattle) 대신 실제 전투 연결
-            TriggerBattleForCurrentEvent();
+            StartBattleForOption(isOption1); // ← 신규 헬퍼로 분리
         }
         else
         {
-            // 전투 없음 → 간단 페널티/연출 후 다음 스테이지
-            foreach (var c in team)
-            {
-                if (c.isDead) continue;
-                c.currentStress += 5;
-                Debug.Log($"{c.Name}의 스트레스 +5 → {c.currentStress}");
-            }
+            var outcome = isOption1 ? currentEventData.option1Outcome : currentEventData.option2Outcome;
+            ApplyNonCombatOutcome(outcome);
 
             stageUI.SetTeamUI(team);
             AdvanceOrEnd();
         }
     }
 
-    // ✅ 추가: 현재 이벤트의 전투를 시작
-    void TriggerBattleForCurrentEvent()
+    // AdventureManager.cs 안에 추가
+    void StartBattleForOption(bool isOption1)
     {
-        Debug.Log(">> 전투 시작 준비");
+        // 옵션별 스테이지 결정 + 폴백
+        var stage = isOption1 ? currentEventData.option1Stage : currentEventData.option2Stage;
+        if (stage == null) stage = currentEventData.battleStage;
 
-        // 1) Adventure UI는 켜둔 채로, 전투 UI를 오버레이처럼 켠다
-        //    (UIFlowManager가 BattleCanvas 켜고 BattleManager.StartBattle 호출)
-        StageData stage = currentEventData.battleStage; // <-- A안 사용
+        // 옵션별 적 리스트 override
+        CharacterData2[] overrideArr = isOption1
+            ? currentEventData.option1EnemiesOverride
+            : currentEventData.option2EnemiesOverride;
 
-        if (stage == null)
+        // BattleContext 세팅
+        BattleContext.Ensure();
+        List<CharacterData2> overrideList = (overrideArr != null && overrideArr.Length > 0)
+            ? new List<CharacterData2>(overrideArr)
+            : null;
+
+        BattleContext.Instance.Set(
+            team,
+            stage,
+            overrideList,
+            $"Stage_{currentStage}_{(isOption1 ? "A" : "B")}"
+        );
+
+        // 기존 흐름 유지: UIFlowManager가 BattleCanvas/씬을 띄우면 BattleEntryBinder가 StartBattle 호출
+        UIFlowManager.Instance.ToBattle(stage);
+    }
+
+    void ApplyNonCombatOutcome(StageEventData.NonCombatOutcome oc)
+    {
+        foreach (var c in team)
         {
-            Debug.LogWarning("battleStage가 비었습니다. 테스트 전투로 진행합니다.");
+            if (c.isDead) continue;
+
+            // HP 변화
+            if (oc.hpDelta != 0)
+            {
+                if (oc.hpDelta >= 0) c.Heal(oc.hpDelta);
+                else c.ApplyDamage(-oc.hpDelta);
+            }
+
+            // 스트레스 변화
+            if (oc.stressDelta != 0) c.AddStress(oc.stressDelta);
         }
 
-        // 2) 전투 진입 (전투는 콜백으로 Adventure로 복귀)
-        UIFlowManager.Instance.ToBattle(stage);
+        // 재화 변화
+        if (oc.stonesDelta != 0 && CurrencyManager.Instance != null)
+        {
+            if (oc.stonesDelta > 0) CurrencyManager.Instance.AddCurrency(oc.stonesDelta);
+            else CurrencyManager.Instance.SpendCurrency(-oc.stonesDelta); // 음수면 차감
+        }
     }
 
     // ✅ 추가: BattleManager가 EndBattle 후 호출하는 콜백
@@ -135,24 +165,19 @@ public class AdventureManager : MonoBehaviour
     {
         Debug.Log("<< 전투 종료 콜백 수신");
 
-        // 1) 전투 결과를 팀에 반영 (HP/사망/스트레스 등)
         ApplyBattleResultToTeam(result);
-
-        // 2) 전투 UI 닫고 모험 화면으로 복귀
         UIFlowManager.Instance.CloseBattleToAdventure();
-
-        // 3) UI 갱신
         stageUI.SetTeamUI(team);
 
-        // 4) 전원 사망 체크 → 종료
         if (IsTeamAllDead())
         {
             StartCoroutine(EndAdventureWithDelay("모든 팀원이 쓰러졌습니다... 모험 실패!"));
+            BattleContext.Instance?.Clear();  // ✅ 컨텍스트 정리 (추가)
             return;
         }
 
-        // 5) 다음 스테이지로 진행 or 종료
         AdvanceOrEnd();
+        BattleContext.Instance?.Clear();      // ✅ 컨텍스트 정리 (추가)
     }
 
     // ✅ 추가: 전투 결과를 현재 모험 팀에 반영

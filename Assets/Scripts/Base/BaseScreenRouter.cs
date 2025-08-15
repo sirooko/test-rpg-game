@@ -4,7 +4,7 @@ using UnityEngine;
 public enum BaseSection
 {
     None, CastleDoor, SummonPortal, GoddessStatue, DemonicMerchant,
-    Storage, Castle, TrainingRoom, RestRoom, Pub, SecretGarden
+    Storage, Castle, TrainingRoom, RestRoom, Pub, SecretGarden, TeamSelectRouter
 }
 
 public class BaseScreenRouter : MonoBehaviour

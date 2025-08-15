@@ -1,136 +1,146 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class TeamSelectUI : MonoBehaviour
 {
     [Header("UI 참조")]
-    public Transform characterListPanel;         // 보유 캐릭터 목록 영역 (Vertical Layout Group)
-    public Transform teamSlotPanel;              // 팀 슬롯 영역 (Horizontal Layout Group)
-    public GameObject characterSlotPrefab;       // 캐릭터 슬롯 프리팹 (보유 목록에 사용)
-    public GameObject teamSlotPrefab;            // 팀 슬롯 프리팹 (선택된 팀원 표시)
-    public Button startAdventureButton;          // 모험 시작 버튼
+    public Transform characterListPanel;      // 보유 캐릭터 목록 영역 (Vertical Layout Group)
+    public Transform teamSlotPanel;           // 팀 슬롯 영역 (Horizontal Layout Group)
+    public GameObject characterSlotPrefab;    // 보유 캐릭터 프리팹
+    public GameObject teamSlotPrefab;         // 팀 슬롯 프리팹
+    public Button startAdventureButton;       // 모험 시작 버튼
+    public Button closeCharacterListButton;   // 캐릭터 목록 닫기 버튼
 
-    public Button closeCharacterListButton;
+    [Header("Refs")]
+    public AdventureManager adventureManager; // 인스펙터에서 연결
 
-    public AdventureManager adventureManager; // 인스펙터 연결
+    [Header("Settings")]
+    [SerializeField] private int maxTeamSize = 5;
 
-    AdventureMapData selectedMapData;
-
-    private List<CharacterData2> currentTeam = new List<CharacterData2>();
+    private AdventureMapData selectedMapData;
+    private readonly List<CharacterData2> currentTeam = new List<CharacterData2>();
     private List<CharacterData2> ownedCharacters;
+    private int selectedSlotIndex = -1;
 
+    // 외부에서 맵 지정
     public void SetSelectedMap(AdventureMapData map)
     {
         selectedMapData = map;
+        // 필요하면 맵 바뀔 때 팀 초기화:
+        // currentTeam.Clear();
+        // RefreshUI();
     }
 
     private void OnEnable()
     {
-        currentTeam.Clear();
-        ownedCharacters = CharacterInventoryManager.Instance.GetAllCharacters();
+        selectedSlotIndex = -1;
+
+        // 보유 캐릭터 로드
+        if (CharacterInventoryManager.Instance != null)
+            ownedCharacters = CharacterInventoryManager.Instance.GetAllCharacters();
+        else
+            ownedCharacters = new List<CharacterData2>();
+
         RefreshUI();
 
-        closeCharacterListButton.onClick.RemoveAllListeners();  // 중복 방지
-        closeCharacterListButton.onClick.AddListener(() => characterListPanel.gameObject.SetActive(false));
+        if (closeCharacterListButton != null)
+        {
+            closeCharacterListButton.onClick.RemoveAllListeners();
+            closeCharacterListButton.onClick.AddListener(() =>
+                characterListPanel.gameObject.SetActive(false));
+        }
     }
 
-    void RefreshUI()
+    private void RefreshUI()
     {
+        if (!characterListPanel || !teamSlotPanel) return;
 
-
-        // 기존 캐릭터 슬롯/팀 슬롯 제거
-        foreach (Transform child in characterListPanel)
-        {
-            if (child.name != "CloseButton") // 닫기 버튼 제외
-            {
-                Destroy(child.gameObject);
-            }
-        }
-        foreach (Transform child in teamSlotPanel)
-        {
-            if (child.name != "CloseButton") // 닫기 버튼 제외
-            {
-                Destroy(child.gameObject);
-            }
-        }
+        // 기존 슬롯 제거 (CloseButton 제외)
+        ClearChildrenExcept(characterListPanel, "CloseButton");
+        ClearChildrenExcept(teamSlotPanel, "CloseButton");
 
         // 캐릭터 목록 생성
-        foreach (var character in ownedCharacters)
+        if (ownedCharacters != null)
         {
-            GameObject slotObj = Instantiate(characterSlotPrefab, characterListPanel);
-            slotObj.transform.Find("CharacterName").GetComponent<Text>().text = character.characterName;
-            slotObj.transform.Find("CharacterImage").GetComponent<Image>().sprite = character.characterSprite;
+            foreach (var ch in ownedCharacters)
+            {
+                var slotObj = Instantiate(characterSlotPrefab, characterListPanel);
 
-            Button btn = slotObj.transform.Find("CharacterInformation").GetComponent<Button>();
-            btn.onClick.AddListener(() => SelectCharacterForSlot(character));
+                var nameTf = slotObj.transform.Find("CharacterName");
+                var imageTf = slotObj.transform.Find("CharacterImage");
+                var infoBtnT = slotObj.transform.Find("CharacterInformation");
+
+                if (nameTf) nameTf.GetComponent<Text>()?.SetTextSafe(ch.characterName);
+                if (imageTf) imageTf.GetComponent<Image>().sprite = ch.characterSprite;
+
+                var c = ch; // ★ 캡처 안전
+                var btn = infoBtnT ? infoBtnT.GetComponent<Button>() : slotObj.GetComponent<Button>();
+                if (btn != null)
+                {
+                    btn.onClick.RemoveAllListeners();
+                    btn.onClick.AddListener(() => SelectCharacterForSlot(c));
+                }
+            }
         }
 
-        /// 팀 슬롯 생성
-        for (int i = 0; i < 5; i++)
+        // 팀 슬롯 생성
+        for (int i = 0; i < maxTeamSize; i++)
         {
-            int index = i; // 캡처 방지
-            GameObject slot = Instantiate(teamSlotPrefab, teamSlotPanel);
+            int index = i; // ★ 캡처 안전
+            var slot = Instantiate(teamSlotPrefab, teamSlotPanel);
 
-            // 슬롯 이미지 설정
-            if (i < currentTeam.Count)
+            var imgTf = slot.transform.Find("CharacterImage");
+            if (imgTf)
             {
-                slot.transform.Find("CharacterImage").GetComponent<Image>().sprite = currentTeam[i].characterSprite;
-                slot.transform.Find("CharacterImage").gameObject.SetActive(true);
-            }
-            else
-            {
-                slot.transform.Find("CharacterImage").gameObject.SetActive(false);
+                var img = imgTf.GetComponent<Image>();
+                bool hasMember = i < currentTeam.Count && currentTeam[i] != null;
+                img.gameObject.SetActive(hasMember);
+                if (hasMember) img.sprite = currentTeam[i].characterSprite;
             }
 
-            // 슬롯에 버튼 클릭 이벤트 추가
-            Button btn = slot.GetComponent<Button>();
+            var btn = slot.GetComponent<Button>();
             if (btn != null)
             {
+                btn.onClick.RemoveAllListeners();
                 btn.onClick.AddListener(() => OnTeamSlotClicked(index));
             }
         }
 
+        // 버튼 상태
+        startAdventureButton.interactable = currentTeam.Any(m => m != null);
 
-        // 버튼 상태 갱신
-        startAdventureButton.interactable = currentTeam.Count > 0;
+        // 캐릭터 목록 기본은 숨김
+        if (characterListPanel) characterListPanel.gameObject.SetActive(false);
     }
 
-    int selectedSlotIndex = -1;
-
-    void OnTeamSlotClicked(int index)
+    private void OnTeamSlotClicked(int index)
     {
+        if (index < 0 || index >= maxTeamSize) return;
         selectedSlotIndex = index;
-        characterListPanel.gameObject.SetActive(true); // 캐릭터 목록 보이기
+        if (characterListPanel) characterListPanel.gameObject.SetActive(true);
     }
 
-
-    void SelectCharacterForSlot(CharacterData2 character)
+    private void SelectCharacterForSlot(CharacterData2 character)
     {
-        if (selectedSlotIndex < 0 || selectedSlotIndex >= 5)
-            return;
+        if (selectedSlotIndex < 0 || selectedSlotIndex >= maxTeamSize) return;
+        if (character == null) return;
 
+        // 중복 방지
         if (currentTeam.Contains(character)) return;
 
-        if (selectedSlotIndex < currentTeam.Count)
-        {
-            currentTeam[selectedSlotIndex] = character;
-        }
-        else
-        {
-            // 빈 슬롯에 추가
-            while (currentTeam.Count <= selectedSlotIndex)
-                currentTeam.Add(null);
+        // 빈칸을 확보하며 지정
+        while (currentTeam.Count <= selectedSlotIndex)
+            currentTeam.Add(null);
 
-            currentTeam[selectedSlotIndex] = character;
-        }
+        currentTeam[selectedSlotIndex] = character;
 
-        characterListPanel.gameObject.SetActive(false); // 목록 닫기
-        RefreshUI(); // UI 갱신
+        if (characterListPanel) characterListPanel.gameObject.SetActive(false);
+        RefreshUI();
     }
 
-
-    // 버튼에 연결
+    // 모험 시작
     public void OnClickStartAdventure()
     {
         if (selectedMapData == null)
@@ -138,9 +148,43 @@ public class TeamSelectUI : MonoBehaviour
             Debug.LogError("❌ selectedMapData가 설정되지 않았습니다!");
             return;
         }
+        if (adventureManager == null)
+        {
+            Debug.LogError("❌ AdventureManager가 연결되지 않았습니다!");
+            return;
+        }
 
-        Debug.Log("모험 시작!");
-        adventureManager.StartAdventure(currentTeam, selectedMapData);
-        gameObject.SetActive(false);  // 팀 선택 UI 닫기
+        // null 없는 팀 구성으로 전달
+        var team = currentTeam.Where(m => m != null).ToList();
+        if (team.Count == 0)
+        {
+            Debug.LogWarning("팀이 비어 있습니다.");
+            return;
+        }
+
+        Debug.Log($"모험 시작! 맵: {selectedMapData.mapName}, 인원: {team.Count}");
+        adventureManager.StartAdventure(team, selectedMapData);
+
+        // 팀 선택 UI 닫기
+        gameObject.SetActive(false);
+    }
+
+    // 유틸
+    private void ClearChildrenExcept(Transform parent, string exceptName)
+    {
+        for (int i = parent.childCount - 1; i >= 0; i--)
+        {
+            var child = parent.GetChild(i);
+            if (child.name == exceptName) continue;
+            Destroy(child.gameObject);
+        }
     }
 }
+
+//static class TextExt
+//{
+//    public static void SetTextSafe(this Text t, string s)
+//    {
+//        if (t) t.text = s ?? "";
+//    }
+//}

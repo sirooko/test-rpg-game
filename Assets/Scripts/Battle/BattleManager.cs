@@ -36,6 +36,9 @@ public class BattleManager : MonoBehaviour
 
     private BattleResult lastResult;  // ✅ 최종 결과를 여기에 저장
 
+    private StageData currentStageData;
+    private List<CharacterInAdventure> currentPlayerTeam;
+
     // BattleManager.cs (필드)
     private bool isBattleEnded = false;
 
@@ -49,17 +52,24 @@ public class BattleManager : MonoBehaviour
     private void Start()
     {
         if (autoStartOnAwake)
-            StartCoroutine(InitBattle());
+            StartCoroutine(InitBattle(currentStageData));
     }
 
     public void StartBattle(StageData stage = null)
     {
+        // 🔹 컨텍스트에서 주입
+        var ctx = BattleContext.Instance;
+        currentStageData = stage ?? ctx?.stage;            // 우선순위: 파라미터 > 컨텍스트
+        currentPlayerTeam = ctx?.playerTeam;                // 플레이어 파티(선택된 팀)
+
         StopAllCoroutines();
         isBattleEnded = false;
         isTurnRunning = false;
 
         Cleanup(); // 혹시 이전 전투 잔재가 있으면 정리
-        StartCoroutine(InitBattle()); // stage를 쓰려면 InitBattle(stage) 오버로드
+
+        // 🔹 스테이지/파티를 쓰는 초기화 코루틴 호출
+        StartCoroutine(InitBattle(currentStageData));
     }
 
     public void Cleanup()
@@ -111,68 +121,125 @@ public class BattleManager : MonoBehaviour
     }
 
 
-    private IEnumerator InitBattle()
+    private IEnumerator InitBattle(StageData stageData)
     {
         playerTeam = new List<CombatCharacter>();
         enemyTeam = new List<CombatCharacter>();
 
-        Debug.Log("⚔ 5대5 InitBattle 시작");
+        Debug.Log("⚔ InitBattle 시작");
 
-        // 1. 플레이어 캐릭터 5명 생성
-        for (int i = 0; i < 5; i++)
+        // === 1) 플레이어 파티 생성 ===
+        if (currentPlayerTeam != null && currentPlayerTeam.Count > 0)
         {
-            GameObject playerObj = Instantiate(playerPrefab);
-            CombatCharacter playerCombat = playerObj.GetComponent<CombatCharacter>();
-
-            if (playerCombat == null)
+            foreach (var runtime in currentPlayerTeam)
             {
-                Debug.LogError($"❌ PlayerPrefab에 CombatCharacter 컴포넌트가 없습니다! (Index: {i})");
-                continue;
+                if (runtime == null) continue;
+
+                var snap = BuildSnapshot(runtime);
+
+                var playerObj = Instantiate(playerPrefab);
+                var playerCombat = playerObj.GetComponent<CombatCharacter>();
+                if (playerCombat == null)
+                {
+                    Debug.LogError("❌ PlayerPrefab에 CombatCharacter가 없습니다!");
+                    Destroy(playerObj);
+                    continue;
+                }
+
+                playerCombat.InitFromData(snap, true);
+
+                // 런타임 상태 반영(클램프)
+                playerCombat.currentHP = Mathf.Clamp(runtime.currentHP, 0, playerCombat.MaxHP);
+                playerCombat.currentMP = Mathf.Clamp(runtime.currentMP, 0, playerCombat.MaxMP);
+
+                // 런타임에서 이미 사망 상태였다면 즉시 반영
+                if (runtime.isDead || playerCombat.currentHP <= 0)
+                {
+                    playerCombat.currentHP = 0;
+                    playerCombat.isAlive = false;
+                }
+
+                if (testSkill != null) playerCombat.skills.Add(testSkill);
+
+                // (선택) 디버그용 이름 지정
+                playerObj.name = $"PC_{snap.characterName}";
+
+                playerTeam.Add(playerCombat);
+                CreateCharacterUI(playerCombat, isEnemy: false);
             }
-
-            playerCombat.InitFromData(testPlayerData, true);
-            playerCombat.skills.Add(testSkill); // 테스트 스킬 추가
-            playerTeam.Add(playerCombat);
-
-            CreateCharacterUI(playerCombat, isEnemy: false);
         }
 
-        // 2. 적 캐릭터 5명 생성
-        for (int i = 0; i < 5; i++)
+        // === 2) 적 생성 ===
+        var ctx = BattleContext.Instance;
+        var enemyTemplates = ctx != null ? ctx.enemyTemplates : null;
+
+        if (enemyTemplates != null && enemyTemplates.Count > 0)
         {
-            GameObject enemyObj = Instantiate(enemyPrefab);
-            CombatCharacter enemyCombat = enemyObj.GetComponent<CombatCharacter>();
-
-            if (enemyCombat == null)
+            foreach (var tpl in enemyTemplates)
             {
-                Debug.LogError($"❌ EnemyPrefab에 CombatCharacter 컴포넌트가 없습니다! (Index: {i})");
-                continue;
+                var enemyObj = Instantiate(enemyPrefab);
+                var enemyCombat = enemyObj.GetComponent<CombatCharacter>();
+                if (!enemyCombat) { Debug.LogError("❌ EnemyPrefab에 CombatCharacter 없음"); Destroy(enemyObj); continue; }
+
+                enemyCombat.InitFromData(tpl, false);
+                if (testSkill != null) enemyCombat.skills.Add(testSkill);
+
+                // (선택) 디버그용 이름
+                enemyObj.name = $"EN_{tpl.characterName}";
+
+                enemyTeam.Add(enemyCombat);
+                CreateCharacterUI(enemyCombat, isEnemy: true);
             }
-
-            enemyCombat.InitFromData(testEnemyData, false);
-            enemyCombat.skills.Add(testSkill); // 테스트 스킬 추가
-            enemyTeam.Add(enemyCombat);
-
-            CreateCharacterUI(enemyCombat, isEnemy: true);
         }
 
-        // 3. 대기 후 턴 시작
+        // === 3) 대기 후 턴 시작 ===
         yield return new WaitForSeconds(1f);
         InitTurnQueue();
         StartCoroutine(HandleTurns());
 
-        // 4. 디버그 출력
+        // === 4) 디버그 출력 ===
         Debug.Log($"PlayerTeam Count: {playerTeam.Count}");
-        foreach (var p in playerTeam)
-        {
-            Debug.Log($"✔ Player: {p.characterData.characterName}");
-        }
+        foreach (var p in playerTeam) Debug.Log($"✔ Player: {p.characterData.characterName}");
 
         Debug.Log($"EnemyTeam Count: {enemyTeam.Count}");
-        foreach (var e in enemyTeam)
+        foreach (var e in enemyTeam) Debug.Log($"✔ Enemy: {e.characterData.characterName}");
+    }
+
+    // 런타임 캐릭터 → InitFromData용 스냅샷 생성
+    private CharacterData2 BuildSnapshot(CharacterInAdventure r)
+    {
+        var cd = ScriptableObject.CreateInstance<CharacterData2>();
+
+        if (r.originalData != null)
         {
-            Debug.Log($"✔ Enemy: {e.characterData.characterName}");
+            var src = r.originalData;
+            cd.characterName = src.characterName;
+            cd.characterId = src.characterId;
+            cd.characterSprite = src.characterSprite;
+            cd.battleSprite = src.battleSprite;
+            cd.level = src.level;
+            cd.maxHP = src.maxHP;
+            cd.maxMP = src.maxMP;
+            cd.attack = src.attack;
+            cd.defense = src.defense;
+            cd.magic = src.magic;
+            cd.resistance = src.resistance;
+            cd.agility = src.agility;
+            cd.talent = src.talent;
+            cd.grade = src.grade;
         }
+        else
+        {
+            // 원본이 없다면 런타임 상태를 최소한으로 반영
+            cd.characterName = r.Name ?? "Unknown";
+            cd.maxHP = r.currentHP;
+            cd.maxMP = r.currentMP;
+        }
+
+        // 런타임 스트레스 반영
+        cd.stress = r.currentStress;
+
+        return cd;
     }
 
     // 🔹 턴 순서를 민첩(AGI) 순으로 초기화

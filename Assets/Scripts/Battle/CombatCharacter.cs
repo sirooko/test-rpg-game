@@ -30,8 +30,8 @@ public class CombatCharacter : MonoBehaviour
     public int MAG => characterData.magic;
     public int RES => characterData.resistance;
     public int AGI => characterData.agility;
-    public int MaxHP => characterData.maxHP;
-    public int MaxMP => characterData.maxMP;
+    public int MaxHP => characterData != null ? characterData.maxHP : currentHP;
+    public int MaxMP => characterData != null ? characterData.maxMP : currentMP;
 
     public bool IsAlive() => isAlive && currentHP > 0;  // 둘 다 만족해야 생존
 
@@ -60,12 +60,39 @@ public class CombatCharacter : MonoBehaviour
     {
         characterData = data;
         isPlayer = isPlayerTeam;
-        isEnemy = !isPlayerTeam;   // ✅ 동시에 true 방지
+        isEnemy = !isPlayerTeam;
 
-        currentHP = data.maxHP;
-        currentMP = data.maxMP;
+        // 기본은 풀피/풀MP
+        currentHP = data != null ? data.maxHP : 1;
+        currentMP = data != null ? data.maxMP : 0;
         isAlive = true;
         hasActed = false;
+
+        ApplySpritesIfAny();
+    }
+
+    /// <summary>
+    /// 런타임 HP/MP를 넘기는 오버로드 (권장)
+    /// </summary>
+    public void InitFromData(CharacterData2 data, bool isPlayerTeam, int hpOverride, int mpOverride)
+    {
+        InitFromData(data, isPlayerTeam); // 기본 세팅 먼저
+                                          // 런타임 값으로 덮어쓰기 (클램프)
+        currentHP = Mathf.Clamp(hpOverride, 0, MaxHP);
+        currentMP = Mathf.Clamp(mpOverride, 0, MaxMP);
+        if (currentHP <= 0) { isAlive = false; }
+    }
+
+    private void ApplySpritesIfAny()
+    {
+        // 전투 스프라이트가 있으면 우선 적용 (프로젝트에 맞게 교체)
+        var sprite = characterData != null ? (characterData.battleSprite ?? characterData.characterSprite) : null;
+
+        var sr = GetComponentInChildren<SpriteRenderer>();
+        if (sr != null && sprite != null) sr.sprite = sprite;
+
+        var img = GetComponentInChildren<UnityEngine.UI.Image>();
+        if (img != null && sprite != null) img.sprite = sprite;
     }
 
     // 피해 처리

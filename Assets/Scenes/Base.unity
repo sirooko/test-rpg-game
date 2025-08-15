@@ -2320,6 +2320,7 @@ MonoBehaviour:
   startAdventureButton: {fileID: 1370125098}
   closeCharacterListButton: {fileID: 284388429}
   adventureManager: {fileID: 1050749285}
+  maxTeamSize: 5
 --- !u!1 &265961577
 GameObject:
   m_ObjectHideFlags: 0
@@ -3197,6 +3198,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   contentPanel: {fileID: 96104563}
   mapSlotPrefab: {fileID: 5070183274775573331, guid: b846479be1dd05842b456da0628bb71c, type: 3}
+  mapListContainer: {fileID: 0}
+  teamSelectPanel: {fileID: 251201500}
   maps:
   - {fileID: 11400000, guid: 7a1f4e88f583c634ea84c764fbf50bee, type: 2}
   - {fileID: 11400000, guid: 6e7f16ed17e99364a82331578608dd6c, type: 2}
@@ -3208,7 +3211,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 022eb2f5a1efb3f46ac1b0b71066cffb, type: 2}
   - {fileID: 11400000, guid: 55712c0bc60dafe40a1e3c79e215444c, type: 2}
   - {fileID: 11400000, guid: a5a75bdaf8d94b24a83384f35c4eb4ac, type: 2}
-  teamSelectPanel: {fileID: 251201500}
   teamSelectUI: {fileID: 251201504}
 --- !u!1 &309696939
 GameObject:
@@ -3933,6 +3935,51 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 337540327}
   m_CullTransparentMesh: 1
+--- !u!1 &339064220
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 339064222}
+  - component: {fileID: 339064221}
+  m_Layer: 0
+  m_Name: BattleEntryBinder
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &339064221
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 339064220}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b776c3d95aee904f84adc49b1642b9b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  battleManager: {fileID: 232264464}
+--- !u!4 &339064222
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 339064220}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.5913273, y: -2.0039022, z: 144.31868}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &341157376
 GameObject:
   m_ObjectHideFlags: 0
@@ -4731,6 +4778,8 @@ MonoBehaviour:
     panel: {fileID: 1094752}
   - section: 9
     panel: {fileID: 1466612888}
+  - section: 11
+    panel: {fileID: 251201500}
   - section: 10
     panel: {fileID: 1206900528}
 --- !u!1 &414065043
@@ -15995,6 +16044,50 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: "\uC120\uD0DD\uC9C01"
+--- !u!1 &1423100862
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1423100864}
+  - component: {fileID: 1423100863}
+  m_Layer: 0
+  m_Name: GameSession
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1423100863
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1423100862}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a703a944da7d16d4c8d018592c23688b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &1423100864
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1423100862}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.5913273, y: -2.0039022, z: 144.31868}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1427094548
 GameObject:
   m_ObjectHideFlags: 0
@@ -24674,3 +24767,5 @@ SceneRoots:
   - {fileID: 1505333154}
   - {fileID: 42188519}
   - {fileID: 380711621}
+  - {fileID: 1423100864}
+  - {fileID: 339064222}

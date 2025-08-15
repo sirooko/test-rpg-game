@@ -4,46 +4,78 @@ using UnityEngine.UI;
 
 public class AdventureMapSelectUI : MonoBehaviour
 {
+    [Header("Panels & Prefab")]
     public Transform contentPanel;
     public GameObject mapSlotPrefab;
+    public GameObject mapListContainer;   // ★ 맵 리스트 부모(없으면 contentPanel.gameObject 사용)
+    public GameObject teamSelectPanel;
+
+    [Header("Data")]
     public List<AdventureMapData> maps;
 
-    public GameObject teamSelectPanel; // ← 팀 선택 UI 참조 추가
-
+    [Header("Team Select")]
     public TeamSelectUI teamSelectUI;
 
-    private void OnEnable()
-    {
-        foreach (Transform child in contentPanel)
-            Destroy(child.gameObject);
+    void OnEnable() => Open();  // 기존 흐름 유지
 
+    public void Open()
+    {
+        if (mapListContainer == null && contentPanel != null)
+            mapListContainer = contentPanel.gameObject;
+
+        if (mapListContainer) mapListContainer.SetActive(true);
+        if (teamSelectPanel) teamSelectPanel.SetActive(false);
+
+        RebuildList();
+    }
+
+    void RebuildList()
+    {
+        if (contentPanel == null || mapSlotPrefab == null) return;
+
+        // 기존 항목 정리
+        for (int i = contentPanel.childCount - 1; i >= 0; i--)
+            Destroy(contentPanel.GetChild(i).gameObject);
+
+        // 슬롯 생성
         foreach (AdventureMapData map in maps)
         {
             GameObject slot = Instantiate(mapSlotPrefab, contentPanel);
-            slot.transform.Find("MapName").GetComponent<Text>().text = map.mapName;
-            slot.transform.Find("backgroundImage").GetComponent<Image>().sprite = map.backgroundImage;
-            slot.transform.Find("tumbnail").GetComponent<Image>().sprite = map.thumbnail;
 
+            var nameTf = slot.transform.Find("MapName");
+            var bgTf = slot.transform.Find("backgroundImage");
+            var thumbTf = slot.transform.Find("tumbnail"); // 프리팹 이름이 이렇다면 유지
 
-            Button btn = slot.GetComponent<Button>();
-            btn.onClick.AddListener(() => SelectMap(map));
+            if (nameTf) nameTf.GetComponent<Text>()?.SetTextSafe(map.mapName);
+            if (bgTf) bgTf.GetComponent<Image>().sprite = map.backgroundImage;
+            if (thumbTf) thumbTf.GetComponent<Image>().sprite = map.thumbnail;
+
+            // ★ 캡처 안전
+            var m = map;
+            var btn = slot.GetComponent<Button>();
+            if (btn != null) btn.onClick.AddListener(() => SelectMap(m));
         }
     }
 
     void SelectMap(AdventureMapData map)
     {
         Debug.Log($"맵 선택: {map.mapName}");
-        // 이후: 팀 선택 → 모험 시작 UI로 연결
 
-        // 선택된 맵 데이터를 팀 선택 UI에 전달
-    if (teamSelectUI != null)
+        if (teamSelectUI != null)
         {
-            teamSelectUI.SetSelectedMap(map);  // 이 라인 추가해야 오류 해결
-            teamSelectPanel.SetActive(true);
+            teamSelectUI.SetSelectedMap(map);
+            if (mapListContainer) mapListContainer.SetActive(false); // ★ 리스트 숨기기
+            if (teamSelectPanel) teamSelectPanel.SetActive(true);
         }
         else
         {
             Debug.LogWarning("teamSelectUI가 연결되지 않았습니다!");
         }
     }
+}
+
+// 작은 편의 확장
+public static class TextExt
+{
+    public static void SetTextSafe(this Text t, string s) { if (t) t.text = s ?? ""; }
 }
